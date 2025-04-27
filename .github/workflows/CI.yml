@@ -107,3 +107,39 @@ jobs:
           else
             echo "Security checks passed. Merge allowed."
           fi
+dast_scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install Dependencies
+        run: |
+          pip install sqlmap
+          sudo apt-get install zaproxy
+
+      - name: Run SQLMap (SQL Injection Detection)
+        run: |
+          sqlmap -u "http://your-app-url.com" --batch --risk=3 --level=5
+
+      - name: Run OWASP ZAP (Cross-Site Scripting and CSRF Detection)
+        run: |
+          zaproxy -cmd -quickurl http://your-app-url.com -quickout zap_report.html
+          
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: zap-report
+          path: zap_report.html
+
+      - name: Upload SQLMap Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: sqlmap-report
+          path: sqlmap_report.txt
