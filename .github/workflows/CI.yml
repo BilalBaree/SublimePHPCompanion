@@ -9,11 +9,12 @@ on:
       - main
 
 jobs:
+  # Job 1: Security Checks
   security_checks:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Enforce code reviews - Only run on pull request events
+      # 1. Enforce code reviews (Only run on pull request events)
       - name: Check if Pull Request has at least one review
         if: github.event_name == 'pull_request'
         uses: hmarr/auto-approve-action@v2
@@ -21,7 +22,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pull-request-number: ${{ github.event.pull_request.number }}
         continue-on-error: false
-        
+
       # 2. Enforce signed commits
       - name: Check if commits are signed
         run: |
@@ -35,12 +36,12 @@ jobs:
           done
         continue-on-error: false
 
-  # Role-based Access Control
+  # Job 2: Role-based Access Control
   roles_access_control:
     runs-on: ubuntu-latest
 
     steps:
-      # 3. Check for role-based access controls for CI/CD
+      # 3. Ensure CI/CD access control is set
       - name: Ensure CI/CD access control is set
         run: |
           if [[ "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
@@ -49,8 +50,7 @@ jobs:
             exit 1
           fi
 
-        
-  # Maintain audit logs of security events
+  # Job 3: Audit Logs of Security Events
   audit_log:
     runs-on: ubuntu-latest
 
@@ -60,7 +60,7 @@ jobs:
           echo "$(date) - Security event: CI/CD pipeline executed with security checks." >> ./audit_log.txt
           cat ./audit_log.txt
 
-  # Security Rules: Secrets Scanning and SQL Injection Prevention
+  # Job 4: Security Rules - Secrets Scanning and SQL Injection Prevention
   security_rules:
     runs-on: ubuntu-latest
     steps:
@@ -107,37 +107,46 @@ jobs:
           else
             echo "Security checks passed. Merge allowed."
           fi
-dast_scan:
+
+  # Job 5: DAST Scan (OWASP ZAP & SQLMap)
+  dast_scan:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v2
 
+      # Set up Python for SQLMap
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
 
+      # Install dependencies for SQLMap and OWASP ZAP
       - name: Install Dependencies
         run: |
           pip install sqlmap
           sudo apt-get install zaproxy
 
+      # Run SQLMap (SQL Injection Detection)
       - name: Run SQLMap (SQL Injection Detection)
         run: |
           sqlmap -u "http://your-app-url.com" --batch --risk=3 --level=5
 
+      # Run OWASP ZAP (Cross-Site Scripting and CSRF Detection)
       - name: Run OWASP ZAP (Cross-Site Scripting and CSRF Detection)
         run: |
           zaproxy -cmd -quickurl http://your-app-url.com -quickout zap_report.html
-          
+
+      # Upload ZAP Report as Artifact
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v2
         with:
           name: zap-report
           path: zap_report.html
 
+      # Upload SQLMap Report as Artifact
       - name: Upload SQLMap Report
         uses: actions/upload-artifact@v2
         with:
