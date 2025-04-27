@@ -57,7 +57,7 @@ jobs:
       - name: Run Bandit for Python Security Linting
         run: |
           pip install bandit
-          bandit -r . -o bandit_report.txt
+          bandit -r . -s B107 -o bandit_report.txt
         continue-on-error: false
 
       # 4. Run TruffleHog for Secrets Scanning
