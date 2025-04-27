@@ -49,16 +49,6 @@ jobs:
             exit 1
           fi
 
-  # SAST Tools Integration - Bandit and TruffleHog
-  sast_tools:
-    runs-on: ubuntu-latest
-    steps:
-      # 3. Run Bandit for Python Security Linting
-      - name: Run Bandit for Python Security Linting
-        run: |
-          pip install bandit
-          bandit -r . -s B107 -o bandit_report.txt
-        continue-on-error: false
         
   # Maintain audit logs of security events
   audit_log:
@@ -86,6 +76,7 @@ jobs:
       # 6. SQL Injection Prevention - Bandit checks for unsafe database queries (B107 rule)
       - name: Check for SQL Injection issues with Bandit
         run: |
+          pip install bandit
           bandit -r . -s B107 -o bandit_sql_report.txt
           if grep -q "issue found" bandit_sql_report.txt; then
             echo "SQL Injection issue detected!"
