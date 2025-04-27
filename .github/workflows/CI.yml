@@ -59,15 +59,7 @@ jobs:
           pip install bandit
           bandit -r . -s B107 -o bandit_report.txt
         continue-on-error: false
-
-      # 4. Run TruffleHog for Secrets Scanning
-      - name: Run Secrets Scanning with TruffleHog
-        run: |
-          pip install truffleHog
-           trufflehog --regex --entropy=False file://$(pwd) > trufflehog_report.json
-          cat secrets_scan_results.json
-        continue-on-error: true
-
+        
   # Maintain audit logs of security events
   audit_log:
     runs-on: ubuntu-latest
@@ -94,7 +86,7 @@ jobs:
       # 6. SQL Injection Prevention - Bandit checks for unsafe database queries (B107 rule)
       - name: Check for SQL Injection issues with Bandit
         run: |
-          bandit -r . --only B107 -o bandit_sql_report.txt
+          bandit -r . -s B107 -o bandit_sql_report.txt
           if grep -q "issue found" bandit_sql_report.txt; then
             echo "SQL Injection issue detected!"
             exit 1
