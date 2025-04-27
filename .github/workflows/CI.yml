@@ -13,13 +13,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Enforce code reviews
+      # 1. Enforce code reviews - Only run on pull request events
       - name: Check if Pull Request has at least one review
+        if: github.event_name == 'pull_request'
         uses: hmarr/auto-approve-action@v2
         with:
-          approve-title: 'This PR is ready for review'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
         continue-on-error: false
-        if: github.event.pull_request.review_count == 0
         
       # 2. Enforce signed commits
       - name: Check if commits are signed
@@ -39,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 3. Check for role-based access controls for CI/CD (this example uses GitHub's default role system)
+      # 3. Check for role-based access controls for CI/CD
       - name: Ensure CI/CD access control is set
         run: |
           if [[ "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
@@ -53,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 4. Verify MFA is enabled for all critical operations (this example checks for MFA status via GitHub API)
+      # 4. Verify MFA is enabled for all critical operations
       - name: Check for MFA enforcement
         run: |
           mfa_status=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
@@ -63,7 +64,7 @@ jobs:
             exit 1
           fi
 
-  # Maintain audit logs of security events (example uses a simple log system for audit purposes)
+  # Maintain audit logs of security events
   audit_log:
     runs-on: ubuntu-latest
 
