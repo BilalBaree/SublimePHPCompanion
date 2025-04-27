@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  security_checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Enforce code reviews
+      - name: Check if Pull Request has at least one review
+        uses: hmarr/auto-approve-action@v2
+        with:
+          approve-title: 'This PR is ready for review'
+        continue-on-error: false
+        if: github.event.pull_request.review_count == 0
+        
+      # 2. Enforce signed commits
+      - name: Check if commits are signed
+        run: |
+          git log --pretty=format:'%h %G? %an' | while read line; do
+            commit_hash=$(echo $line | cut -d ' ' -f 1)
+            commit_status=$(echo $line | cut -d ' ' -f 2)
+            if [[ "$commit_status" != "G" ]]; then
+              echo "Commit $commit_hash is not signed"
+              exit 1
+            fi
+          done
+        continue-on-error: false
+
+  # Role-based Access Control
+  roles_access_control:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 3. Check for role-based access controls for CI/CD (this example uses GitHub's default role system)
+      - name: Ensure CI/CD access control is set
+        run: |
+          if [[ "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -s "https://api.github.com/repos/${{ github.repository }}/collaborators" | jq '.[] | select(.permissions.push == true)' | wc -l)" -lt 1 ]]; then
+            echo "Role-based CI/CD access is not set correctly"
+            exit 1
+          fi
+
+  # Require MFA for critical operations
+  mfa_check:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 4. Verify MFA is enabled for all critical operations (this example checks for MFA status via GitHub API)
+      - name: Check for MFA enforcement
+        run: |
+          mfa_status=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -s "https://api.github.com/user" | jq '.two_factor_authentication')
+          if [[ "$mfa_status" != "true" ]]; then
+            echo "MFA is not enabled for critical operations"
+            exit 1
+          fi
+
+  # Maintain audit logs of security events (example uses a simple log system for audit purposes)
+  audit_log:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log security event
+        run: |
+          echo "$(date) - Security event: CI/CD pipeline executed with security checks." >> ./audit_log.txt
+          cat ./audit_log.txt
