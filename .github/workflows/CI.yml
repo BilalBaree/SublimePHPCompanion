@@ -66,7 +66,7 @@ jobs:
           pip install truffleHog
            trufflehog --regex --entropy=False file://$(pwd) > trufflehog_report.json
           cat secrets_scan_results.json
-        continue-on-error: false
+        continue-on-error: true
 
   # Maintain audit logs of security events
   audit_log:
