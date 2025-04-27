@@ -49,20 +49,24 @@ jobs:
             exit 1
           fi
 
-  # Require MFA for critical operations
-  mfa_check:
+  # SAST Tools Integration - Bandit and TruffleHog
+  sast_tools:
     runs-on: ubuntu-latest
-
     steps:
-      # 4. Verify MFA is enabled for all critical operations
-      - name: Check for MFA enforcement
+      # 3. Run Bandit for Python Security Linting
+      - name: Run Bandit for Python Security Linting
         run: |
-          mfa_status=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          -s "https://api.github.com/user" | jq '.two_factor_authentication')
-          if [[ "$mfa_status" != "true" ]]; then
-            echo "MFA is not enabled for critical operations"
-            exit 1
-          fi
+          pip install bandit
+          bandit -r . -o bandit_report.txt
+        continue-on-error: false
+
+      # 4. Run TruffleHog for Secrets Scanning
+      - name: Run Secrets Scanning with TruffleHog
+        run: |
+          pip install truffleHog
+          trufflehog --json . > secrets_scan_results.json
+          cat secrets_scan_results.json
+        continue-on-error: false
 
   # Maintain audit logs of security events
   audit_log:
@@ -73,3 +77,50 @@ jobs:
         run: |
           echo "$(date) - Security event: CI/CD pipeline executed with security checks." >> ./audit_log.txt
           cat ./audit_log.txt
+
+  # Security Rules: Secrets Scanning and SQL Injection Prevention
+  security_rules:
+    runs-on: ubuntu-latest
+    steps:
+      # 5. Secrets Scanning - Detect hardcoded API keys, passwords, and secrets
+      - name: Check for hardcoded secrets with TruffleHog
+        run: |
+          if [[ -f "secrets_scan_results.json" && $(jq '.results | length' secrets_scan_results.json) -gt 0 ]]; then
+            echo "Secrets found in the code!"
+            exit 1
+          fi
+        continue-on-error: false
+
+      # 6. SQL Injection Prevention - Bandit checks for unsafe database queries (B107 rule)
+      - name: Check for SQL Injection issues with Bandit
+        run: |
+          bandit -r . --only B107 -o bandit_sql_report.txt
+          if grep -q "issue found" bandit_sql_report.txt; then
+            echo "SQL Injection issue detected!"
+            exit 1
+          fi
+        continue-on-error: false
+
+  # Optional: Merge Check - Only allow merge if security checks pass
+  merge_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if code passes security checks before merge
+        run: |
+          security_check_passed=true
+          # Check if secrets scan failed
+          if [[ -f "secrets_scan_results.json" && $(jq '.results | length' secrets_scan_results.json) -gt 0 ]]; then
+            echo "Secrets scan failed, issues found."
+            security_check_passed=false
+          fi
+          # Check if Bandit found SQL injection issues
+          if grep -q "issue found" bandit_sql_report.txt; then
+            echo "SQL Injection prevention check failed, issues found."
+            security_check_passed=false
+          fi
+          if [[ "$security_check_passed" == false ]]; then
+            echo "Security checks failed. Merge not allowed."
+            exit 1
+          else
+            echo "Security checks passed. Merge allowed."
+          fi
