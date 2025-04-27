@@ -64,6 +64,7 @@ jobs:
       - name: Run Secrets Scanning with TruffleHog
         run: |
           pip install truffleHog
+          git clone https://github.com/${{ github.repository }} .  # Clone the repo using the correct Git URL
           trufflehog --json . > secrets_scan_results.json
           cat secrets_scan_results.json
         continue-on-error: false
