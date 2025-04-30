@@ -1,4 +1,4 @@
-name: Snyk Security Scan
+name: Full Security CI with Snyk and Policy Checks
 
 on:
   push:
@@ -9,30 +9,35 @@ on:
       - main
 
 jobs:
-  snyk-scan:
+  security-scan:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js (for React Native or hybrid apps)
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16' # or any required version
+          node-version: '16'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run Snyk to check for vulnerabilities
+      - name: Run Snyk to scan for vulnerabilities (Rule d)
         uses: snyk/actions/node@master
         with:
           args: test --severity-threshold=medium
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Fail build if vulnerabilities found
-        run: |
-          snyk test --severity-threshold=medium
+      - name: Fail build if vulnerabilities found (Rule e)
+        run: snyk test --severity-threshold=medium
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Check against allowlist (Rule f)
+        run: node scripts/check-allowlist.js
+
+      - name: Verify signed libraries (Rule g)
+        run: bash scripts/verify-signatures.sh
