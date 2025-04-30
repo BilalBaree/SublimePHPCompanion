@@ -91,7 +91,7 @@ jobs:
 
       - name: Check for SQL Injection issues with Bandit
         run: |
-          bandit -r . -s B107 -o bandit_sql_report.txt
+          bandit -r . -f json -o bandit_sql_report.txt -t B107
           if grep -q "issue" bandit_sql_report.txt; then
             echo "SQL Injection issue detected!"
             cat bandit_sql_report.txt
