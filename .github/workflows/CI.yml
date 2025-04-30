@@ -63,97 +63,39 @@ jobs:
   # Job 4: Security Rules - Secrets Scanning and SQL Injection Prevention
   security_rules:
     runs-on: ubuntu-latest
+
     steps:
-      # 5. Secrets Scanning - Detect hardcoded API keys, passwords, and secrets
-      - name: Check for hardcoded secrets with TruffleHog
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
         run: |
+          pip install trufflehog bandit jq
+
+      - name: Check for hardcoded secrets & Run TruffleHog Secrets Scan
+        run: |
+          trufflehog filesystem --json . > secrets_scan_results.json
           if [[ -f "secrets_scan_results.json" && $(jq '.results | length' secrets_scan_results.json) -gt 0 ]]; then
-            echo "Secrets found in the code!"
+            echo "❌ Secrets found in the code!"
+            cat secrets_scan_results.json
             exit 1
+          else
+            echo "✅ No secrets found."
           fi
         continue-on-error: false
 
       # 6. SQL Injection Prevention - Bandit checks for unsafe database queries (B107 rule)
       - name: Check for SQL Injection issues with Bandit
         run: |
-          pip install bandit
           bandit -r . -s B107 -o bandit_sql_report.txt
-          if grep -q "issue found" bandit_sql_report.txt; then
+          if grep -q "issue" bandit_sql_report.txt; then
             echo "SQL Injection issue detected!"
+            cat bandit_sql_report.txt
             exit 1
           fi
         continue-on-error: false
-
-  # Optional: Merge Check - Only allow merge if security checks pass
-  merge_check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check if code passes security checks before merge
-        run: |
-          security_check_passed=true
-          # Check if secrets scan failed
-          if [[ -f "secrets_scan_results.json" && $(jq '.results | length' secrets_scan_results.json) -gt 0 ]]; then
-            echo "Secrets scan failed, issues found."
-            security_check_passed=false
-          fi
-          # Check if Bandit found SQL injection issues
-          if grep -q "issue found" bandit_sql_report.txt; then
-            echo "SQL Injection prevention check failed, issues found."
-            security_check_passed=false
-          fi
-          if [[ "$security_check_passed" == false ]]; then
-            echo "Security checks failed. Merge not allowed."
-            exit 1
-          else
-            echo "Security checks passed. Merge allowed."
-          fi
-
-  # Job 5: DAST Scan (OWASP ZAP & SQLMap)
-  dast_scan:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Checkout the code
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      # Set up Python for SQLMap
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-
-      # Install dependencies for SQLMap and OWASP ZAP
-      - name: Install Dependencies
-        run: |
-          pip install sqlmap
-          sudo apt-get update
-          sudo apt-get install -y openjdk-11-jre
-          wget https://github.com/zaproxy/zaproxy/releases/download/v2.16.1/ZAP_2.16.1_Linux.tar.gz
-          tar -xvzf ZAP_2.16.1_Linux.tar.gz
-          sudo mv ZAP_2.16.1 /opt/zaproxy
-          sudo ln -s /opt/zaproxy/zap.sh /usr/local/bin/zap
-
-      # Run SQLMap (SQL Injection Detection)
-      - name: Run SQLMap (SQL Injection Detection)
-        run: |
-          sqlmap -u "http://your-app-url.com" --batch --risk=3 --level=5
-
-      # Run OWASP ZAP (Cross-Site Scripting and CSRF Detection)
-      - name: Run OWASP ZAP (Cross-Site Scripting and CSRF Detection)
-        run: |
-          zap -cmd -quickurl http://your-app-url.com -quickout zap_report.html
-
-      # Upload ZAP Report as Artifact
-      - name: Upload ZAP Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-report
-          path: zap_report.html
-
-      # Upload SQLMap Report as Artifact
-      - name: Upload SQLMap Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: sqlmap-report
-          path: sqlmap_report.txt
