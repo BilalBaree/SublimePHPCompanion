@@ -79,8 +79,8 @@ jobs:
 
       - name: Check for hardcoded secrets & Run TruffleHog Secrets Scan
         run: |
-          trufflehog filesystem --json . > secrets_scan_results.json
-          if [[ -f "secrets_scan_results.json" && $(jq '.results | length' secrets_scan_results.json) -gt 0 ]]; then
+          trufflehog --json . > secrets_scan_results.json
+          if [[ -f "secrets_scan_results.json" && $(jq length secrets_scan_results.json) -gt 0 ]]; then
             echo "❌ Secrets found in the code!"
             cat secrets_scan_results.json
             exit 1
@@ -89,7 +89,6 @@ jobs:
           fi
         continue-on-error: false
 
-      # 6. SQL Injection Prevention - Bandit checks for unsafe database queries (B107 rule)
       - name: Check for SQL Injection issues with Bandit
         run: |
           bandit -r . -s B107 -o bandit_sql_report.txt
