@@ -3,7 +3,7 @@ name: Full Security CI with Snyk and Policy Checks
 on:
   push:
     branches:
-      - develop
+      - main
   pull_request:
     branches:
       - main
