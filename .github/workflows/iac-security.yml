@@ -3,7 +3,7 @@ name: IaC Security with Terraform, Checkov & Conftest update
 on:
   push:
     branches:
-      - main
+      - develop
   pull_request:
     branches:
       - main
