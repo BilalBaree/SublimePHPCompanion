@@ -26,10 +26,14 @@ jobs:
         with:
           terraform_version: 1.4.6
 
-      - name: Install Checkov and Conftest
+      - name: Install Checkov
         run: |
           pip install checkov
-          curl -L https://github.com/open-policy-agent/conftest/releases/latest/download/conftest_Linux_x86_64.tar.gz | tar xz
+
+      - name: Install Conftest
+        run: |
+          wget https://github.com/open-policy-agent/conftest/releases/latest/download/conftest_Linux_x86_64.tar.gz
+          tar -xzf conftest_Linux_x86_64.tar.gz
           sudo mv conftest /usr/local/bin
 
       # Rule d - IaC Misconfig Detection
