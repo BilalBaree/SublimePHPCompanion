@@ -21,8 +21,7 @@ jobs:
         with:
           node-version: '16'
 
-      - name: Install dependencies
-        run: npm install
+      # Removed the npm install step because package.json doesn't exist
 
       - name: Run Snyk to scan for vulnerabilities (Rule d)
         uses: snyk/actions/node@master
