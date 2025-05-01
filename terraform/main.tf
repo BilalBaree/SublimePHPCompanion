@@ -3,27 +3,28 @@ provider "aws" {
 }
 
 # ✅ Secure IAM Policy - follows least privilege principle
-resource "aws_iam_policy" "insecure_policy" {
-  name        = "InsecurePolicy"
-  description = "Policy with specific actions and resources (improved least privilege)"
+resource "aws_iam_policy" "secure_policy" {
+  name        = "SecurePolicy"
+  description = "Policy with restricted actions for S3"
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
+        Effect   = "Allow"
         Action   = [
-          "s3:GetObject",  # Limit actions to GetObject on S3
-          "s3:ListBucket"  # Limit actions to ListBucket on S3
-        ],
+          "s3:ListBucket",
+          "s3:GetObject"
+        ]
         Resource = [
-          "arn:aws:s3:::example-bucket",  # Specify exact bucket
-          "arn:aws:s3:::example-bucket/*"  # Specify exact objects within the bucket
+          "arn:aws:s3:::my-bucket",
+          "arn:aws:s3:::my-bucket/*"
         ]
       }
     ]
   })
 }
+
 
 
 # ❌ Insecure IAM Policy - overly permissive (for security scanning demonstration)
