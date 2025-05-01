@@ -39,5 +39,6 @@ resource "aws_iam_policy" "insecure_policy" {
 # ❌ Hardcoded secret - violates secret management best practices
 variable "api_key" {
   description = "API key (should not be hardcoded)"
-  default     = "sk_test_1234567890abcdef" # Will trigger Checkov or tfsec
+  type        = string
+  default     = ""  # This should be securely managed via environment variables or AWS Secrets Manager
 }
