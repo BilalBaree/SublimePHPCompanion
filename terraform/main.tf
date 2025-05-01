@@ -5,7 +5,7 @@ provider "aws" {
 # ✅ Secure IAM Policy - follows least privilege principle
 resource "aws_iam_policy" "secure_policy" {
   name        = "SecurePolicy"
-  description = "Policy with restricted actions for S3"
+  description = "Policy with restricted actions and resources"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -20,6 +20,14 @@ resource "aws_iam_policy" "secure_policy" {
           "arn:aws:s3:::my-bucket",
           "arn:aws:s3:::my-bucket/*"
         ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
+          "ec2:DescribeInstances",
+          "ec2:StartInstances"
+        ]
+        Resource = "*"
       }
     ]
   })
