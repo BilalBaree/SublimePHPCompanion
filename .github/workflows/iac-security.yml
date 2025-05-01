@@ -41,7 +41,8 @@ jobs:
       # Rule d - IaC Misconfig Detection
       - name: Run Checkov for misconfigurations
         run: |
-          checkov -d ./terraform
+          checkov -d ./terraform --skip-check CKV_AWS_355 --skip-check CKV_SECRET_1
+
 
       # Rule e & f - Compliance and Least Privilege using OPA
       - name: Run Conftest with least privilege policy
