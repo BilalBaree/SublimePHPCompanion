@@ -36,7 +36,7 @@ provider "aws" {
 
 resource "aws_iam_policy" "secure_limited_policy" {
   name        = "SecureLimitedPolicy"
-  description = "A policy with scoped permissions"
+  description = "A policy with scoped permissions ."
 
   policy = jsonencode({
     Version = "2012-10-17",
