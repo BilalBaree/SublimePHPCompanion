@@ -1,4 +1,4 @@
-name: IaC Security with Terraform, Checkov & Conftest
+name: IaC Security with Terraform, Checkov & Conftest update
 
 on:
   push:
